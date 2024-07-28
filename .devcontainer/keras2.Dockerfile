@@ -10,7 +10,10 @@ RUN apt update --fix-missing && \
         build-essential cmake pkg-config git vim netcat file xvfb \
         wget curl zip unzip bzip2 gfortran graphviz tree libjsoncpp-dev \
         openjdk-17-jdk libgoogle-glog-dev libeigen3-dev libgflags-dev libsuitesparse-dev \
-        libtesseract-dev tesseract-ocr tesseract-ocr-kor tesseract-ocr-eng 
+        libtesseract-dev tesseract-ocr tesseract-ocr-kor tesseract-ocr-eng \
+        libjpeg-dev libpng-dev ffmpeg libavcodec-dev libgtkglext1-dev libatlas-base-dev \
+        libavformat-dev libswscale-dev libxvidcore-dev libx264-dev libxine2-dev \
+        libv4l-dev v4l-utils mesa-utils libgl1-mesa-dri
 RUN apt -y clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # tesseract-ocr
