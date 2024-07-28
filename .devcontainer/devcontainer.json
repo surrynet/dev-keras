@@ -1,0 +1,57 @@
+{
+	"name": "dev-keras",
+	//"build": {
+    //  "buildArgs": "BACKEND=-cpu",
+    //  "buildArgs": "BACKEND=-jax-cuda",
+    //  "buildArgs": "BACKEND=-torch-cuda",
+    //  "buildArgs": "BACKEND=-tensorflow-cuda",
+	//	"dockerfile": "Dockerfile"
+	//},
+    //"image": "dev-keras2:latest",
+    //"image": "dev-keras3:latest",
+    "image": "dev-keras3:jax",
+    //"image": "dev-keras3:torch",
+    //"image": "dev-keras3:tensorflow", // 문제가 많아.. cuda 12만 지원
+    //"image": "dev-keras3:cpu",
+	
+	"runArgs": [
+		// 캠 사용
+		"--device=/dev/video0:/dev/video0",
+		// xhost +local:docker 실행 필요
+		"--volume=/tmp/.X11-unix:/tmp/.X11-unix"
+	],
+
+	"containerEnv": {
+		"DISPLAY": "unix${localEnv:DISPLAY}"
+	},
+
+	"customizations": {
+		"vscode": {
+			"settings": { 
+				"terminal.integrated.shell.linux": "/bin/bash",
+  		    	"python.testing.pytestEnabled": true
+			},
+			"extentions": [
+				"ms-vscode.cpptools",
+				"ms-python.python",
+				"littlefoxteam.vscode-python-test-adapter"
+			]
+		}
+	},
+
+    "updateRemoteUserUID": false,
+	"remoteUser": "vscode",
+
+	"privileged": true,
+	"capAdd": ["SYS_PTRACE"],
+	"securityOpt": [ "seccomp=unconfined" ],
+	"hostRequirements": {
+		"gpu": true
+	},
+
+    "mounts": [
+		{
+			"source": "vscode-server", "target": "/home/vscode/.vscode-server", "type": "volume"
+		}
+	]
+}
