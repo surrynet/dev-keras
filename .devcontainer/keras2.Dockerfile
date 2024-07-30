@@ -128,4 +128,4 @@ COPY requirements-pip.txt requirements-pip-jupyter.txt requirements-common.txt /
 RUN pip install --no-cache --no-user --use-deprecated=legacy-resolver -r /requirements-pip.txt \
     && pip install --no-cache --no-user --use-deprecated=legacy-resolver -r /requirements-pip-jupyter.txt \
     && pip install --no-cache --no-user --use-deprecated=legacy-resolver -r /requirements-common.txt \
-    && rm -f /requirements-{pip,common,pip-jupyter}.txt
+    && rm -f /requirements-*.txt
