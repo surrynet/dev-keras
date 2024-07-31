@@ -46,7 +46,6 @@ tabulate
 ldap3
 pyglet
 implicit
-xgboost
 shap
 glmnet
 pytesseract
