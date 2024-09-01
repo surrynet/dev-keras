@@ -92,9 +92,12 @@ geopandas==1.0.1
 pycountry==24.6.1
 pgeocode==0.5.0
 geopy==2.4.1
-pyzipcode==3.0.1
 xgboost==2.1.0
 tabula-py
+pandas_parallel_apply
+py7zr
+awscli
+pyodbc
 
 --extra-index-url https://download.pytorch.org/whl/cu118
 torch==2.2.2+cu118
