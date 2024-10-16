@@ -5,7 +5,6 @@ bottleneck
 cloudpickle
 conda-forge::blas=*=openblas
 cython
-dask==2024.7.1
 dill
 h5py
 ipympl

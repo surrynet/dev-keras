@@ -9,7 +9,9 @@ cons==0.4.6
 cron-descriptor==1.2.31
 datasets==2.16.1
 db-dtypes==1.2.0
-distributed==2022.10.2
+dask==2023.7.0
+dask-expr==0.1.0
+distributed==2023.7.0
 dm-tree==0.1.8
 docstring_parser==0.16
 etils==1.7.0
