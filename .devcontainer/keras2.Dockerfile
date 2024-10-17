@@ -39,23 +39,25 @@ ENV PYTHON_VERSION=3.10
 RUN mkdir -p ${CONDA_DIR}
 ENV PATH=${CONDA_DIR}/bin:$PATH
 
+SHELL ["/bin/bash", "-c"]
+ENV SHELL=/bin/bash
 RUN set -x && \
     arch=$(uname -m) && \
-    if [ "${arch}" = "x86_64" ]; then \
-        arch="64"; \
-    fi && \
+    if [ "${arch}" == "x86_64" ]; then arch="64"; fi && \
     wget "https://github.com/mamba-org/micromamba-releases/releases/latest/download/micromamba-linux-${arch}" -O micromamba && \
     chmod +x micromamba && \
     PYTHON_SPECIFIER="python=${PYTHON_VERSION}" && \
-    if [ "${PYTHON_VERSION}" = "default" ]; then PYTHON_SPECIFIER="python"; fi && \
+    if [ "${PYTHON_VERSION}" == "default" ]; then PYTHON_SPECIFIER="python"; fi && \
     ./micromamba install \
+        -c conda-forge \
         --root-prefix="${CONDA_DIR}" \
         --prefix="${CONDA_DIR}" \
         --yes \
         "${PYTHON_SPECIFIER}" \
-        'mamba' \
-        -c conda-forge && \
+        'mamba' 'conda' && \
     rm micromamba && \
+    ls -al ${CONDA_DIR}/bin && \
+    echo $PATH && \
     mamba list python | grep '^python ' | tr -s ' ' | cut -d ' ' -f 1,2 >> "${CONDA_DIR}/conda-meta/pinned" && \
     conda config --add channels conda-forge && \
     conda config --set channel_priority strict && \
