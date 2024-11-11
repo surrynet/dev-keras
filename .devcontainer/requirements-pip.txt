@@ -21,6 +21,8 @@ flatbuffers==23.5.26
 fsspec==2023.10.0
 gast==0.5.4
 gensim==4.3.2
+wrapt==1.14.1
+google-auth=2.32.0
 google-api-core==2.19.1
 google-cloud-aiplatform==1.60.0
 google-cloud-bigquery-storage==2.25.0
