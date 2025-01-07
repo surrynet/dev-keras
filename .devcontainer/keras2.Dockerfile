@@ -13,7 +13,7 @@ RUN apt update --fix-missing && \
         libtesseract-dev tesseract-ocr tesseract-ocr-kor tesseract-ocr-eng \
         libjpeg-dev libpng-dev ffmpeg libavcodec-dev libgtkglext1-dev libatlas-base-dev \
         libavformat-dev libswscale-dev libxvidcore-dev libx264-dev libxine2-dev \
-        libv4l-dev v4l-utils mesa-utils libgl1-mesa-dri p7zip
+        libv4l-dev v4l-utils mesa-utils libgl1-mesa-dri
 RUN apt -y clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # tesseract-ocr
@@ -44,7 +44,7 @@ ENV SHELL=/bin/bash
 RUN set -x && \
     arch=$(uname -m) && \
     if [ "${arch}" == "x86_64" ]; then arch="64"; fi && \
-    wget "https://github.com/mamba-org/micromamba-releases/releases/latest/download/micromamba-linux-${arch}" -O micromamba && \
+    wget -q "https://github.com/mamba-org/micromamba-releases/releases/latest/download/micromamba-linux-${arch}" -O micromamba && \
     chmod +x micromamba && \
     PYTHON_SPECIFIER="python=${PYTHON_VERSION}" && \
     if [ "${PYTHON_VERSION}" == "default" ]; then PYTHON_SPECIFIER="python"; fi && \
@@ -56,17 +56,15 @@ RUN set -x && \
         "${PYTHON_SPECIFIER}" \
         'mamba' 'conda' && \
     rm micromamba && \
-    ls -al ${CONDA_DIR}/bin && \
-    echo $PATH && \
     mamba list python | grep '^python ' | tr -s ' ' | cut -d ' ' -f 1,2 >> "${CONDA_DIR}/conda-meta/pinned" && \
     conda config --add channels conda-forge && \
     conda config --set channel_priority strict && \
     conda config --remove channels defaults
 
-COPY requirements-base.txt /
-RUN mamba install -y --file requirements-base.txt && rm -f /requirements-base.txt
-COPY requirements-base-jupyter.txt /
-RUN mamba install -y --file /requirements-base-jupyter.txt && rm -f /requirements-base-jupyter.txt
+COPY keras2.requirements-base.txt /
+RUN mamba install -y --file keras2.requirements-base.txt && rm -f /keras2.requirements-base.txt
+COPY keras2.requirements-base-jupyter.txt /
+RUN mamba install -y --file /keras2.requirements-base-jupyter.txt && rm -f /keras2.requirements-base-jupyter.txt
 RUN mamba clean --all -f -y
 
 FROM base AS dev-keras2
@@ -126,8 +124,8 @@ RUN mkdir -p opencv_build && cd opencv_build && \
     echo "/usr/local/lib" > /etc/ld.so.conf.d/opencv4.conf && ldconfig && \
     cd ../../ && rm -rf opencv_build
 
-COPY requirements-pip.txt requirements-pip-jupyter.txt requirements-common.txt /
-RUN pip install --no-cache --no-user --use-deprecated=legacy-resolver -r /requirements-pip.txt \
-    && pip install --no-cache --no-user --use-deprecated=legacy-resolver -r /requirements-pip-jupyter.txt \
-    && pip install --no-cache --no-user --use-deprecated=legacy-resolver -r /requirements-common.txt \
-    && rm -f /requirements-*.txt
+COPY keras2.requirements-pip.txt keras2.requirements-pip-jupyter.txt keras2.requirements-common.txt /
+RUN pip install --no-cache --no-user --use-deprecated=legacy-resolver -r /keras2.requirements-pip.txt \
+    && pip install --no-cache --no-user --use-deprecated=legacy-resolver -r /keras2.requirements-pip-jupyter.txt \
+    && pip install --no-cache --no-user --use-deprecated=legacy-resolver -r /keras2.requirements-common.txt \
+    && rm -f /keras2.requirements-*.txt

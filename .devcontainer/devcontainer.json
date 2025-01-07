@@ -8,11 +8,10 @@
 	//	"dockerfile": "Dockerfile"
 	//},
     //"image": "dev-keras2:latest",
-    //"image": "dev-keras3:latest",
-    "image": "dev-keras3:jax",
-    //"image": "dev-keras3:torch",
-    //"image": "dev-keras3:tensorflow", // 문제가 많아.. cuda 12만 지원
     //"image": "dev-keras3:cpu",
+    //"image": "dev-keras3:jax",
+    "image": "dev-keras3:torch",
+    //"image": "dev-keras3:tensorflow",
 	
 	"runArgs": [
 		// 캠 사용

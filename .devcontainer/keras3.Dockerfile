@@ -1,7 +1,128 @@
+ARG CUDA_VERSION=11.8.0
+
+# base
+FROM nvidia/cuda:${CUDA_VERSION}-cudnn8-devel-ubuntu22.04 AS base
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+USER root
+
+ARG PYTHON_VERSION=3.10
+ENV DEBIAN_FRONTEND=noninteractive
+ENV NVIDIA_DRIVER_CAPABILITIES=all
+
+# jupyter docker-stacks-foundation
+RUN apt-get update --fix-missing && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    wget \
+    bash-completion \
+    libgl1 \
+    libgl1-mesa-glx \
+    libegl-dev \
+    libegl1 \
+    libxrender1 \
+    libglib2.0-0 \
+    ffmpeg \
+    libgtk2.0-dev \
+    pkg-config \
+    libvulkan-dev \
+    libgles2 \
+    libglvnd0 \
+    libglx0 \
+    sudo \
+    bzip2 zip unzip \
+    ca-certificates \
+    locales \
+    tini \
+    vim \
+    tree \
+    libldap2-dev libsasl2-dev libssl-dev \
+    && apt clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
+    locale-gen
+
+ENV CONDA_DIR=/opt/conda \
+    SHELL=/bin/bash \
+    LC_ALL=en_US.UTF-8 \
+    LANG=en_US.UTF-8 \
+    LANGUAGE=en_US.UTF-8
+ENV PATH=${CONDA_DIR}/bin:${PATH}
+
+WORKDIR /tmp
+RUN set -x && \
+    arch=$(uname -m) && \
+    if [ "${arch}" == "x86_64" ]; then arch="64"; fi && \
+    wget -q "https://github.com/mamba-org/micromamba-releases/releases/latest/download/micromamba-linux-${arch}" -O micromamba && \
+    chmod +x micromamba && \
+    PYTHON_SPECIFIER="python=${PYTHON_VERSION}" && \
+    if [ "${PYTHON_VERSION}" == "default" ]; then PYTHON_SPECIFIER="python"; fi && \
+    ./micromamba install \
+        -c conda-forge \
+        --root-prefix="${CONDA_DIR}" \
+        --prefix="${CONDA_DIR}" \
+        --yes \
+        "${PYTHON_SPECIFIER}" \
+        'mamba' 'conda' && \
+    rm micromamba && \
+    mamba list python | awk '$1 ~ /^python$/{print $1, $2}' >> "${CONDA_DIR}/conda-meta/pinned" && \
+    mamba clean --all -f -y
+
+RUN conda config --add channels conda-forge && \
+    conda config --set channel_priority strict && \
+    conda config --remove channels defaults
+
+COPY requirements-common.txt /tmp
+RUN pip install --no-cache --no-user -r /tmp/requirements-common.txt && rm /tmp/requirements-common.txt
+
+RUN mamba install -y scikit-build cmake && mamba clean --all -f -y
+RUN git clone --recursive https://github.com/opencv/opencv-python.git && \
+    cd opencv-python && \
+    ENABLE_CONTRIB=1 python setup.py bdist_wheel -- \
+	-DWITH_CUDA=ON \
+	-DWITH_CUDDN=ON \
+	-DOPENCV_DNN_CUDA=ON \
+	-DENABLE_FAST_MATH=1 \
+	-DCUDA_FAST_MATH=1 \
+	-DWITH_CUBLAS=1 \
+	-DCUDA_ARCH_BIN=8.6 -- \
+	-j $(nproc) && \
+    cd dist && \
+    target_file=$(ls | head -n 1) && \
+    python -m pip install --upgrade $target_file && \
+    rm -rf /tmp/opencv-python
+
+COPY requirements-pip.txt /tmp
+RUN pip install --no-cache --no-user -r /tmp/requirements-pip.txt && rm /tmp/requirements*.txt
+
+COPY requirements-jupyter.txt /tmp
+RUN mamba install -y --file /tmp/requirements-jupyter.txt && mamba clean --all -f -y && rm /tmp/requirements-jupyter.txt
+
+WORKDIR /workspace
+
+ARG USERNAME=vscode
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+
+RUN groupadd --gid ${USER_GID} ${USERNAME} \
+    && useradd -s /bin/bash --uid ${USER_UID} --gid ${USER_GID} -m ${USERNAME} \
+    && echo ${USERNAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME} \
+    && chmod 0440 /etc/sudoers.d/${USERNAME} \
+    && mkdir -p /home/${USERNAME}/.vscode-server/extensions \
+    && chown -R ${USERNAME} /home/${USERNAME}/.vscode-server
+
+# if use video device
+RUN usermod -a -G video ${USERNAME}
+
+
 # BACKEND: '', '-jax-cuda', '-torch-cuda', '-tensorflow-cuda'
-ARG BASE_CONTAINER=dev-keras2
-FROM ${BASE_CONTAINER}
+FROM base AS main
 ARG BACKEND
 
-COPY requirements${BACKEND}.txt requirements-common.txt /
-RUN pip install --no-cache --no-user -r requirements${BACKEND}.txt && rm -f requirements*.txt
+USER root
+WORKDIR /tmp
+COPY requirements${BACKEND}.txt requirements-common.txt /tmp
+RUN pip install --no-cache --no-user -r /tmp/requirements${BACKEND}.txt && rm /tmp/requirements*.txt
+
+WORKDIR /workspace
+
