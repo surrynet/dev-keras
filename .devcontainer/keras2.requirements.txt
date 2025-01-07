@@ -1,0 +1,26 @@
+namex
+black>=22
+flake8
+isort
+pytest
+numpy<2.0.0  # TODO: Remove the restriction when tf2onnx supports numpy>2.0.0
+scipy
+pandas
+absl-py
+requests
+h5py
+ml-dtypes==0.2.0
+protobuf
+google
+tensorboard-plugin-profile
+rich
+build
+optree
+pytest-cov
+tf2onnx
+onnxruntime
+
+keras-cv==0.8.2
+keras-nlp==0.8.2
+keras==2.14.0
+tf-keras==2.15.0

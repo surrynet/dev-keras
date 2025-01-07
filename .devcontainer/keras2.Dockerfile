@@ -1,20 +1,47 @@
-FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04 AS base
+ARG CUDA_VERSION=11.8.0
 
-ARG USERNAME=vscode
-ARG USER_UID=1000
-ARG USER_GID=$USER_UID
+# base
+FROM nvidia/cuda:${CUDA_VERSION}-cudnn8-devel-ubuntu22.04 AS base
 
-RUN apt update --fix-missing && \
-    apt install -y --no-install-recommends sudo \
-        software-properties-common gnupg2 ca-certificates \
-        build-essential cmake pkg-config git vim netcat file xvfb \
-        wget curl zip unzip bzip2 p7zip gfortran graphviz tree libjsoncpp-dev \
-        openjdk-17-jdk libgoogle-glog-dev libeigen3-dev libgflags-dev libsuitesparse-dev \
-        libtesseract-dev tesseract-ocr tesseract-ocr-kor tesseract-ocr-eng \
-        libjpeg-dev libpng-dev ffmpeg libavcodec-dev libgtkglext1-dev libatlas-base-dev \
-        libavformat-dev libswscale-dev libxvidcore-dev libx264-dev libxine2-dev \
-        libv4l-dev v4l-utils mesa-utils libgl1-mesa-dri
-RUN apt -y clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+USER root
+
+ARG PYTHON_VERSION=3.10
+ENV DEBIAN_FRONTEND=noninteractive
+ENV NVIDIA_DRIVER_CAPABILITIES=all
+
+# jupyter docker-stacks-foundation
+RUN apt-get update --fix-missing && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    wget \
+    bash-completion \
+    libgl1 \
+    libgl1-mesa-glx \
+    libegl-dev \
+    libegl1 \
+    libxrender1 \
+    libglib2.0-0 \
+    ffmpeg \
+    libgtk2.0-dev \
+    pkg-config \
+    libvulkan-dev \
+    libgles2 \
+    libglvnd0 \
+    libglx0 \
+    sudo \
+    bzip2 zip unzip \
+    ca-certificates \
+    locales \
+    tini \
+    vim \
+    tree \
+    libldap2-dev libsasl2-dev libssl-dev \
+    libtesseract-dev tesseract-ocr tesseract-ocr-kor tesseract-ocr-eng \
+    && apt clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
+    locale-gen
 
 # tesseract-ocr
 RUN mkdir -p /usr/local/share/tessdata && \
@@ -24,23 +51,14 @@ RUN mkdir -p /usr/local/share/tessdata && \
     wget -q "https://github.com/tesseract-ocr/tessdata_best/blob/main/eng.traineddata?raw=true" -O /usr/local/share/tessdata/eng.traineddata
 ENV TESSDATA_PREFIX=/usr/local/share/tessdata
 
-RUN groupadd --gid ${USER_GID} ${USERNAME} \
-    && useradd -s /bin/bash --uid ${USER_UID} --gid ${USER_GID} -m ${USERNAME} \
-    && echo ${USERNAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME} \
-    && chmod 0440 /etc/sudoers.d/${USERNAME} \
-    && mkdir -p /home/${USERNAME}/.vscode-server/extensions \
-    && chown -R ${USERNAME} /home/${USERNAME}/.vscode-server
+ENV CONDA_DIR=/opt/conda \
+    SHELL=/bin/bash \
+    LC_ALL=en_US.UTF-8 \
+    LANG=en_US.UTF-8 \
+    LANGUAGE=en_US.UTF-8
+ENV PATH=${CONDA_DIR}/bin:${PATH}
 
-# if use video device
-RUN usermod -a -G video ${USERNAME}
-
-ENV CONDA_DIR=/opt/conda
-ENV PYTHON_VERSION=3.10
-RUN mkdir -p ${CONDA_DIR}
-ENV PATH=${CONDA_DIR}/bin:$PATH
-
-SHELL ["/bin/bash", "-c"]
-ENV SHELL=/bin/bash
+WORKDIR /tmp
 RUN set -x && \
     arch=$(uname -m) && \
     if [ "${arch}" == "x86_64" ]; then arch="64"; fi && \
@@ -56,76 +74,54 @@ RUN set -x && \
         "${PYTHON_SPECIFIER}" \
         'mamba' 'conda' && \
     rm micromamba && \
-    mamba list python | grep '^python ' | tr -s ' ' | cut -d ' ' -f 1,2 >> "${CONDA_DIR}/conda-meta/pinned" && \
-    conda config --add channels conda-forge && \
+    mamba list python | awk '$1 ~ /^python$/{print $1, $2}' >> "${CONDA_DIR}/conda-meta/pinned" && \
+    mamba clean --all -f -y
+
+RUN conda config --add channels conda-forge && \
     conda config --set channel_priority strict && \
     conda config --remove channels defaults
 
-COPY keras2.requirements-base.txt /
-RUN mamba install -y --file keras2.requirements-base.txt && rm -f /keras2.requirements-base.txt
-COPY keras2.requirements-base-jupyter.txt /
-RUN mamba install -y --file /keras2.requirements-base-jupyter.txt && rm -f /keras2.requirements-base-jupyter.txt
-RUN mamba clean --all -f -y
+COPY keras2.requirements.txt /tmp
+RUN pip install --no-cache --no-user -r /tmp/keras2.requirements.txt && rm /tmp/keras2.requirements.txt
 
-FROM base AS dev-keras2
+RUN mamba install -y scikit-build cmake && mamba clean --all -f -y
+RUN git clone --recursive https://github.com/opencv/opencv-python.git && \
+    cd opencv-python && \
+    ENABLE_CONTRIB=1 python setup.py bdist_wheel -- \
+	-DWITH_CUDA=ON \
+	-DWITH_CUDDN=ON \
+	-DOPENCV_DNN_CUDA=ON \
+	-DENABLE_FAST_MATH=1 \
+	-DCUDA_FAST_MATH=1 \
+	-DWITH_CUBLAS=1 \
+	-DCUDA_ARCH_BIN=8.6 -- \
+	-j $(nproc) && \
+    cd dist && \
+    target_file=$(ls | head -n 1) && \
+    python -m pip install --upgrade $target_file && \
+    rm -rf /tmp/opencv-python
 
-RUN git clone https://ceres-solver.googlesource.com/ceres-solver && \
-    cd ceres-solver && git checkout 2.0.0 && mkdir build && cd build && cmake .. && \
-    make -j$(nproc) && make install && ldconfig && \
-    cd ../../ && rm -rf ceres-solver
+COPY requirements-pip.txt /tmp
+RUN pip install --no-cache --no-user -r /tmp/requirements-pip.txt && rm /tmp/requirements*.txt
 
-# https://en.wikipedia.org/wiki/CUDA  CUDA_ARCH_BIN 참고
-RUN mkdir -p opencv_build && cd opencv_build && \
-    git clone --single-branch -b 4.7.0 https://github.com/opencv/opencv_contrib.git && \
-    git clone --single-branch -b 4.7.0 https://github.com/opencv/opencv.git && cd opencv && \
-    git submodule update --init --recursive && \
-    mkdir -p build && cd build && \
-    export PYTHON_VERSION="$(${CONDA_DIR}/bin/python --version | cut -d ' ' -f 2)" && \
-    export CPLUS_INCLUDE_PATH=${CONDA_DIR}/lib/python${PYTHON_VERSION%.*} && \
-    cmake -D CMAKE_BUILD_TYPE=RELEASE \
-    -D CMAKE_INSTALL_PREFIX=/usr/local \
-    -D INSTALL_C_EXAMPLES=OFF \
-    -D INSTALL_PYTHON_EXAMPLES=OFF \
-    -D OPENCV_GENERATE_PKGCONFIG=ON \
-    -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules \
-    -D BUILD_SHARED_LIBS=OFF \
-    -D WITH_TBB=OFF \
-    -D WITH_IPP=OFF \
-    -D WITH_1394=OFF \
-    -D BUILD_WITH_DEBUG_INFO=OFF \
-    -D BUILD_DOCS=OFF \
-    -D BUILD_TESTS=OFF \
-    -D BUILD_PERF_TESTS=OFF \
-    -D BUILD_TIFF=ON \
-    -D WITH_QT=OFF \
-    -D WITH_GTK=ON \
-    -D WITH_OPENGL=OFF \
-    -D WITH_V4L=ON  \
-    -D WITH_LIBV4L=ON \
-    -D WITH_FFMPEG=ON \
-    -D WITH_XINE=ON \
-    -D WITH_GSTREAMER=OFF \
-    -D BUILD_NEW_PYTHON_SUPPORT=ON \
-    -D BUILD_EXAMPLES=OFF \
-    -D PYTHON3_INCLUDE_DIR=${CONDA_DIR}/include/python${PYTHON_VERSION%.*} \
-    -D PYTHON3_NUMPY_INCLUDE_DIRS=${CONDA_DIR}/lib/python${PYTHON_VERSION%.*}/site-packages/numpy/core/include \
-    -D PYTHON3_PACKAGES_PATH=${CONDA_DIR}/lib/python${PYTHON_VERSION%.*}/site-packages \
-    -D PYTHON3_LIBRARY=${CONDA_DIR}/lib/libpython${PYTHON_VERSION%.*}.so \
-    -D PYTHON_EXECUTABLE=${CONDA_DIR}/bin/python \
-    -D WITH_CUDA=ON \
-    -D WITH_CUDNN=ON \
-    -D OPENCV_DNN_CUDA=ON \
-    -D ENABLE_FAST_MATH=1 \
-    -D CUDA_FAST_MATH=1 \
-    -D CUDA_ARCH_BIN=8.6 \
-    -D WITH_CUBLAS=1 \
-    .. && make -j$(nproc) && make install && \
-    ln -s /usr/local/lib/pkgconfig/opencv4.pc /usr/share/pkgconfig/ && \
-    echo "/usr/local/lib" > /etc/ld.so.conf.d/opencv4.conf && ldconfig && \
-    cd ../../ && rm -rf opencv_build
+COPY requirements-jupyter.txt /tmp
+RUN mamba install -y --file /tmp/requirements-jupyter.txt && mamba clean --all -f -y && rm /tmp/requirements*.txt
 
-COPY keras2.requirements-pip.txt keras2.requirements-pip-jupyter.txt keras2.requirements-common.txt /
-RUN pip install --no-cache --no-user --use-deprecated=legacy-resolver -r /keras2.requirements-pip.txt \
-    && pip install --no-cache --no-user --use-deprecated=legacy-resolver -r /keras2.requirements-pip-jupyter.txt \
-    && pip install --no-cache --no-user --use-deprecated=legacy-resolver -r /keras2.requirements-common.txt \
-    && rm -f /keras2.requirements-*.txt
+WORKDIR /workspace
+
+ARG USERNAME=vscode
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+
+RUN groupadd --gid ${USER_GID} ${USERNAME} \
+    && useradd -s /bin/bash --uid ${USER_UID} --gid ${USER_GID} -m ${USERNAME} \
+    && echo ${USERNAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME} \
+    && chmod 0440 /etc/sudoers.d/${USERNAME} \
+    && mkdir -p /home/${USERNAME}/.vscode-server/extensions \
+    && chown -R ${USERNAME} /home/${USERNAME}/.vscode-server
+
+# if use video device
+RUN usermod -a -G video ${USERNAME}
+
+COPY keras2.requirements-post.txt /tmp
+RUN pip install --no-cache --no-user -r /tmp/keras2.requirements-post.txt && rm /tmp/keras2.requirements*.txt
