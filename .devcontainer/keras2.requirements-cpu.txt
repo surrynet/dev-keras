@@ -11,5 +11,5 @@ jax[cpu]==0.4.25
 flax
 
 # Common deps.
--r requirements-common.txt
+-r keras2.requirements-common.txt
 

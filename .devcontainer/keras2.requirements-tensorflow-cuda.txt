@@ -10,5 +10,5 @@ torchvision==0.17.2
 jax[cpu]==0.4.25
 flax
 
--r requirements-common.txt
+-r keras2.requirements-common.txt
 
