@@ -81,10 +81,7 @@ RUN conda config --add channels conda-forge && \
     conda config --set channel_priority strict && \
     conda config --remove channels defaults
 
-COPY requirements-common.txt /tmp
-RUN pip install --no-cache --no-user -r /tmp/requirements-common.txt && rm /tmp/requirements*.txt
-
-RUN mamba install -y scikit-build cmake && mamba clean --all -f -y
+RUN mamba install -y scikit-build cmake 'numpy<2.0.0' && mamba clean --all -f -y
 RUN git clone --recursive https://github.com/opencv/opencv-python.git && \
     cd opencv-python && \
     ENABLE_CONTRIB=1 python setup.py bdist_wheel -- \
@@ -100,6 +97,9 @@ RUN git clone --recursive https://github.com/opencv/opencv-python.git && \
     target_file=$(ls | head -n 1) && \
     python -m pip install --upgrade $target_file && \
     rm -rf /tmp/opencv-python
+
+COPY requirements-common.txt /tmp
+RUN pip install --no-cache --no-user -r /tmp/requirements-common.txt && rm /tmp/requirements*.txt
 
 COPY requirements-pip.txt /tmp
 RUN pip install --no-cache --no-user -r /tmp/requirements-pip.txt && rm /tmp/requirements*.txt
