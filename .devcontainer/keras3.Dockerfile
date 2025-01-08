@@ -1,4 +1,5 @@
 ARG CUDA_VERSION=11.8.0
+ARG CUDA_ARCH_BIN=8.6
 
 # base
 FROM nvidia/cuda:${CUDA_VERSION}-cudnn8-devel-ubuntu22.04 AS base
@@ -91,7 +92,7 @@ RUN git clone --recursive https://github.com/opencv/opencv-python.git && \
 	-DENABLE_FAST_MATH=1 \
 	-DCUDA_FAST_MATH=1 \
 	-DWITH_CUBLAS=1 \
-	-DCUDA_ARCH_BIN=8.6 -- \
+	-DCUDA_ARCH_BIN=${CUDA_ARCH_BIN} -- \
 	-j $(nproc) && \
     cd dist && \
     target_file=$(ls | head -n 1) && \
