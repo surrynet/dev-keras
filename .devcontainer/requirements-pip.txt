@@ -45,6 +45,7 @@ pyglet
 pylint
 pymc
 pyodbc
+pytesseract
 sasl
 seaborn
 sentence-transformers
@@ -58,6 +59,7 @@ tabulate
 tensorboard
 texttable
 tokenizers
+torch_geometric
 transformers
 vaex
 widgetsnbextension

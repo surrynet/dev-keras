@@ -2,16 +2,13 @@
 	"name": "dev-keras",
 	//"build": {
     //  "buildArgs": "BACKEND=-cpu",
-    //  "buildArgs": "BACKEND=-jax-cuda",
-    //  "buildArgs": "BACKEND=-torch-cuda",
-    //  "buildArgs": "BACKEND=-tensorflow-cuda",
-	//	"dockerfile": "Dockerfile"
+    //  "buildArgs": "BACKEND=-gpu",
+	//	"dockerfile": "keras2.Dockerfile"
+	//	"dockerfile": "keras3.Dockerfile"
 	//},
-    //"image": "dev-keras2:latest",
+    //"image": "dev-keras2:gpu",
+    "image": "dev-keras3:gpu",
     //"image": "dev-keras3:cpu",
-    //"image": "dev-keras3:jax",
-    "image": "dev-keras3:torch",
-    //"image": "dev-keras3:tensorflow",
 	
 	"runArgs": [
 		// 캠 사용

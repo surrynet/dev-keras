@@ -1,29 +1,12 @@
-namex
-black>=22
-flake8
-isort
-pytest
-numpy<2.0.0  # TODO: Remove the restriction when tf2onnx supports numpy>2.0.0
-scipy==1.12.0
-numexpr==2.8.4
-openpyxl==3.1.4
-pandas
-absl-py
-requests
-h5py
-ml-dtypes==0.2.0
-protobuf
-google
-tensorboard-plugin-profile
-rich
-build
-optree
-pytest-cov
-tf2onnx
-onnxruntime
+--extra-index-url https://download.pytorch.org/whl/cu118
+torch==2.5.1+cu118
+torchvision==0.20.1+cu118
+torch-xla
 
-tensorflow==2.15.0
-keras-cv==0.8.2
-keras-nlp==0.8.2
-keras==2.15.0
-tf-keras==2.15.0
+# Jax.
+--find-links https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+jax[cuda11_pip]==0.4.25
+jaxlib==0.4.25
+flax
+
+-r keras2.requirements-common.txt

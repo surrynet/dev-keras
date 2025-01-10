@@ -1,11 +1,17 @@
+# Tensorflow with cuda support.
+tensorflow[and-cuda]~=2.16.2
+tf2onnx
+
+# Torch with cuda support.
 --extra-index-url https://download.pytorch.org/whl/cu118
 torch==2.5.1+cu118
 torchvision==0.20.1+cu118
 torch-xla
 
-# Jax.
+# Jax with cuda support.
+# TODO: Higher version breaks CI.
 --find-links https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 jax[cuda11_pip]==0.4.25
-jaxlib==0.4.25
 flax
 
+-r requirements-common.txt
