@@ -30,6 +30,7 @@ matplotlib
 multiprocess
 multiprocesspandas
 mysql-connector-python
+onnxruntime_extensions
 open_clip_torch
 optimum
 pandas-gbq
