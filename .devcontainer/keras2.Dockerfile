@@ -102,7 +102,7 @@ RUN pip install --no-cache --no-user -r /requirements-pip.txt && rm /requirement
 COPY requirements-jupyter.txt /
 RUN mamba install -y --file /requirements-jupyter.txt && mamba clean --all -f -y && rm /requirements*.txt
 
-WORKDIR /workspace
+WORKDIR /workspaces
 
 ARG USERNAME=vscode
 ARG USER_UID=1000
