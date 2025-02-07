@@ -40,6 +40,7 @@ pendulum
 pgeocode
 psycopg2-binary
 py7zr
+pycocotools
 pycountry
 pydot
 pygeos
