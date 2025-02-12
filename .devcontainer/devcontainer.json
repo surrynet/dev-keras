@@ -46,8 +46,7 @@
 	},
 
     "mounts": [
-		{
-			"source": "vscode-server", "target": "/home/vscode/.vscode-server", "type": "volume"
-		}
+		{"source": "vscode-server", "target": "/home/vscode/.vscode-server", "type": "volume"},
+		{"source": "${localEnv:HOME}/.kaggle", "target": "/home/vscode/.kaggle", "type": "bind"}
 	]
 }

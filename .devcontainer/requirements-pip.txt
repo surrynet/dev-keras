@@ -60,6 +60,7 @@ sympy
 tabula-py
 tabulate
 tensorboard
+tensorflow_datasets
 texttable
 tokenizers
 torch_geometric
