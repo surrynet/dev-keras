@@ -1,19 +1,19 @@
 # Tensorflow.
 tensorflow-cpu~=2.16.2;sys_platform != 'darwin'
 tensorflow~=2.16.2;sys_platform == 'darwin'
-tf_keras==2.16.0
+tf_keras~=2.16.0
 tf2onnx
 
 # Torch.
 # TODO: Pin to < 2.3.0 (GitHub issue #19602)
 --extra-index-url https://download.pytorch.org/whl/cpu
-torch>=2.1.0
-torchvision>=0.16.0
-torch-xla
+torch~=2.5.1
+torchvision~=0.20.1
+torch-xla~=2.5.0
 
 # Jax.
-jax[cpu]
-flax
+jax[cpu]~=0.4.25
+flax~=0.8.4
 
 # Common deps.
 -r requirements-common.txt

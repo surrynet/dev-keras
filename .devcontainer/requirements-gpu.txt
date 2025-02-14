@@ -7,12 +7,12 @@ tf_keras~=2.16.0
 --extra-index-url https://download.pytorch.org/whl/cu118
 torch==2.5.1+cu118
 torchvision==0.20.1+cu118
-torch-xla
+torch-xla~=2.5.0
 
 # Jax with cuda support.
 # TODO: Higher version breaks CI.
 --find-links https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
-jax[cuda11_pip]==0.4.25
-flax
+jax[cuda11_pip]~=0.4.25
+flax~=0.8.4
 
 -r requirements-common.txt
