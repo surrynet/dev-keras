@@ -1,3 +1,4 @@
+accelerate
 awscli
 basemap
 bayesian-optimization
